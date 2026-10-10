@@ -1,0 +1,203 @@
+{% extends 'base.html' %}
+{% block title %}{{ product.name }}{% endblock %}
+{% block content %}
+<div class="card shadow-lg border-0 rounded-4 overflow-hidden mb-5">
+    <div class="row g-0">
+        <div class="col-md-6 bg-body-tertiary d-flex align-items-center justify-content-center p-4">
+            <img src="{{ product.image_url }}" class="img-fluid rounded-4 shadow-sm"
+                 style="max-height: 480px; width: 100%; object-fit: cover;" alt="{{ product.name }}">
+        </div>
+        <div class="col-md-6 p-4 p-lg-5">
+            <div class="d-flex align-items-center mb-3 flex-wrap gap-2">
+                <span class="badge bg-primary fs-6">{{ product.category }}</span>
+                {% if avg_rating > 0 %}
+                <span class="text-warning fw-bold"><i class="bi bi-star-fill"></i> {{ avg_rating }} / 5</span>
+                <span class="text-muted small">({{ reviews|length }} review{{ '' if reviews|length == 1 else 's' }})</span>
+                {% endif %}
+                <span class="text-muted small ms-auto"><i class="bi bi-eye"></i> {{ product.views or 0 }} views</span>
+            </div>
+
+            <h1 class="h1 fw-bold mb-2">{{ product.name }}</h1>
+            <h2 class="text-primary fw-bold mb-3">₹{{ money(product.price) }}</h2>
+
+            {% if product.availability == 'Yes' and product.quantity > 0 %}
+            <p class="text-success fw-bold mb-3"><i class="bi bi-check-circle"></i>
+                In stock — {{ product.quantity }} available</p>
+            {% else %}
+            <p class="text-danger fw-bold mb-3"><i class="bi bi-x-circle"></i> Out of stock</p>
+            {% endif %}
+
+            <p class="lead text-secondary mb-4" style="line-height: 1.7;">{{ product.description }}</p>
+
+            <div class="bg-body-tertiary p-4 rounded-4 mb-4 border">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3"
+                         style="width: 50px; height: 50px;"><i class="bi bi-shop fs-4"></i></div>
+                    <div>
+                        <h5 class="mb-0 fw-bold">{{ product.shop_name or 'Local seller' }}</h5>
+                        <small class="text-muted">Seller: {{ product.seller_name or 'Unknown' }}</small>
+                    </div>
+                </div>
+                <div class="text-secondary small">
+                    <p class="mb-1"><i class="bi bi-geo-alt text-primary"></i> {{ product.location or 'Location unavailable' }}</p>
+                    <p class="mb-0"><i class="bi bi-telephone text-primary"></i> {{ product.phone or 'Phone unavailable' }}</p>
+                </div>
+            </div>
+
+            <div class="d-flex gap-2 align-items-end">
+                <form action="{{ url_for('add_to_cart', product_id=product._id) }}" method="POST"
+                      class="d-flex p-3 border rounded-4 align-items-center flex-grow-1">
+                    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+                    <div class="me-3">
+                        <label class="small text-muted fw-bold d-block mb-1">Quantity</label>
+                        <input type="number" name="quantity" value="1" min="1" max="{{ product.quantity }}"
+                               class="form-control form-control-lg text-center fw-bold" style="width: 90px;">
+                    </div>
+                    <div class="flex-grow-1">
+                        {% if product.availability == 'Yes' and product.quantity > 0 %}
+                        <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold">
+                            <i class="bi bi-bag-plus"></i> Add to Cart</button>
+                        {% else %}
+                        <button disabled class="btn btn-danger btn-lg w-100 fw-bold">Out of stock</button>
+                        {% endif %}
+                    </div>
+                </form>
+                {% if 'user_id' in session %}
+                <form action="{{ url_for('toggle_wishlist', product_id=product._id) }}" method="POST">
+                    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+                    <button class="btn btn-lg {% if in_wishlist %}btn-danger{% else %}btn-outline-danger{% endif %}"
+                            title="Toggle wishlist">
+                        <i class="bi bi-heart{% if in_wishlist %}-fill{% endif %}"></i>
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-4">
+        <div class="card shadow-sm border-0 rounded-4 mb-4">
+            <div class="card-header bg-transparent py-3"><h5 class="mb-0 fw-bold">Rating breakdown</h5></div>
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    <h1 class="display-5 fw-bold mb-0 me-3">{{ avg_rating }}</h1>
+                    <div>
+                        <div class="text-warning">
+                            {% for i in range(1, 6) %}
+                            <i class="bi bi-star{% if i <= avg_rating %}-fill{% endif %}"></i>
+                            {% endfor %}
+                        </div>
+                        <small class="text-muted">{{ reviews|length }} review(s)</small>
+                    </div>
+                </div>
+                {% set total_reviews = reviews|length or 1 %}
+                {% for star in [5, 4, 3, 2, 1] %}
+                <div class="d-flex align-items-center mb-2">
+                    <span class="small fw-bold me-2" style="width: 34px;">{{ star }}★</span>
+                    <div class="progress flex-grow-1" style="height: 8px;">
+                        <div class="progress-bar bg-warning"
+                             style="width: {{ (histogram[star] / total_reviews * 100)|round(1) }}%"></div>
+                    </div>
+                    <span class="small text-muted ms-2" style="width: 28px;">{{ histogram[star] }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        {% if related %}
+        <div class="card shadow-sm border-0 rounded-4">
+            <div class="card-header bg-transparent py-3"><h5 class="mb-0 fw-bold">More in {{ product.category }}</h5></div>
+            <div class="card-body p-0">
+                <ul class="list-group list-group-flush">
+                    {% for item in related %}
+                    <li class="list-group-item d-flex align-items-center">
+                        <img src="{{ item.image_url }}" width="48" height="48" class="rounded object-fit-cover me-3" alt="{{ item.name }}">
+                        <div class="flex-grow-1">
+                            <a href="{{ url_for('product_details', product_id=item._id) }}"
+                               class="fw-bold text-decoration-none d-block text-truncate">{{ item.name }}</a>
+                            <span class="text-primary fw-bold small">₹{{ money(item.price) }}</span>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="col-lg-8">
+        <div class="card shadow-sm border-0 rounded-4">
+            <div class="card-header bg-transparent py-3"><h5 class="mb-0 fw-bold">Customer Reviews</h5></div>
+            <div class="card-body p-4">
+                {% if my_review %}
+                <div class="alert alert-info d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-info-circle"></i> You already reviewed this product —
+                        submitting again updates your review.</span>
+                    <form action="{{ url_for('delete_review', product_id=product._id) }}" method="POST"
+                          onsubmit="return confirm('Delete your review?');">
+                        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+                        <button class="btn btn-sm btn-outline-danger">Delete mine</button>
+                    </form>
+                </div>
+                {% endif %}
+
+                {% if can_review %}
+                <div class="bg-body-tertiary p-4 rounded-4 mb-4">
+                    <h6 class="fw-bold mb-3">{% if my_review %}Update your review{% else %}Write a review{% endif %}</h6>
+                    <form action="{{ url_for('add_review', product_id=product._id) }}" method="POST">
+                        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+                        <div class="row g-2 mb-3">
+                            <div class="col-md-4">
+                                <select name="rating" class="form-select" required>
+                                    <option value="">Rating…</option>
+                                    {% for r in [5, 4, 3, 2, 1] %}
+                                    <option value="{{ r }}" {% if my_review and my_review.rating == r %}selected{% endif %}>
+                                        {{ '★' * r }} ({{ r }}/5)</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-8">
+                                <input type="text" name="comment" class="form-control" required
+                                       placeholder="Share your experience…"
+                                       value="{{ my_review.comment if my_review else '' }}">
+                            </div>
+                        </div>
+                        <button class="btn btn-primary px-4 fw-bold">Post review</button>
+                    </form>
+                </div>
+                {% elif 'user_id' not in session %}
+                <div class="alert alert-primary py-3 rounded-3 text-center mb-4">
+                    <i class="bi bi-info-circle"></i> Please
+                    <a href="{{ url_for('login', next=request.path) }}" class="fw-bold">log in</a> to leave a review.
+                </div>
+                {% endif %}
+
+                {% for review in reviews %}
+                <div class="mb-4 pb-4 border-bottom">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="fw-bold mb-0">
+                            <i class="bi bi-person-circle text-primary me-2"></i>{{ review.username }}
+                            {% if review.verified %}
+                            <span class="badge bg-success ms-1"><i class="bi bi-patch-check"></i> Verified purchase</span>
+                            {% endif %}
+                        </h6>
+                        <span class="text-warning">
+                            {% for i in range(review.rating) %}★{% endfor %}{% for i in range(5 - review.rating) %}<span class="text-muted">★</span>{% endfor %}
+                        </span>
+                    </div>
+                    <p class="mb-1 text-secondary">{{ review.comment }}</p>
+                    <small class="text-muted">{{ (review.get('updated_at') or review.date).strftime('%B %d, %Y') }}</small>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <h5 class="text-muted fw-bold">No reviews yet</h5>
+                    <p class="text-secondary mb-0">Be the first to review this product!</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

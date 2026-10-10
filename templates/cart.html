@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+{% block title %}Your Cart{% endblock %}
+{% block content %}
+<h2 class="fw-bold mb-4"><i class="bi bi-cart3"></i> Your Shopping Cart</h2>
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="card shadow-sm border-0 rounded-4">
+            <div class="card-body p-0">
+                {% if cart_items %}
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead class="table-light">
+                            <tr><th>Product</th><th>Price</th><th style="width: 190px;">Quantity</th><th>Subtotal</th><th></th></tr>
+                        </thead>
+                        <tbody>
+                            {% for item in cart_items %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <img src="{{ item.product.image_url }}" width="55" height="55"
+                                             class="object-fit-cover rounded me-3" alt="{{ item.product.name }}">
+                                        <div>
+                                            <a href="{{ url_for('product_details', product_id=item.product._id) }}"
+                                               class="fw-bold text-decoration-none">{{ item.product.name }}</a>
+                                            <small class="text-muted d-block">{{ item.product.shop_name }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>₹{{ money(item.product.price) }}</td>
+                                <td>
+                                    <form action="{{ url_for('update_cart', product_id=item.product._id) }}"
+                                          method="POST" class="d-flex align-items-center gap-2">
+                                        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+                                        <input type="number" name="quantity" value="{{ item.quantity }}" min="0"
+                                               max="{{ item.product.quantity }}"
+                                               class="form-control form-control-sm text-center" style="width: 80px;">
+                                        <button class="btn btn-sm btn-outline-primary" title="Update"><i class="bi bi-arrow-repeat"></i></button>
+                                    </form>
+                                    <small class="text-muted">{{ item.product.quantity }} in stock</small>
+                                </td>
+                                <td class="fw-bold">₹{{ money(item.subtotal) }}</td>
+                                <td>
+                                    <a href="{{ url_for('remove_from_cart', product_id=item.product._id) }}"
+                                       class="btn btn-sm btn-danger"><i class="bi bi-trash"></i></a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="p-3 border-top">
+                    <a href="{{ url_for('products') }}" class="btn btn-link">&larr; Continue shopping</a>
+                </div>
+                {% else %}
+                <div class="p-5 text-center">
+                    <div class="display-1 text-muted mb-3"><i class="bi bi-cart-x"></i></div>
+                    <h4 class="text-muted">Your cart is empty</h4>
+                    <a href="{{ url_for('products') }}" class="btn btn-primary mt-3 px-4">Browse products</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card shadow-sm border-0 rounded-4 mb-4">
+            <div class="card-header bg-transparent py-3"><h5 class="mb-0 fw-bold">
+                <i class="bi bi-ticket-perforated"></i> Coupon</h5></div>
+            <div class="card-body">
+                {% if coupon %}
+                <div class="alert alert-success d-flex justify-content-between align-items-center mb-0">
+                    <div>
+                        <strong>{{ coupon.code }}</strong><br>
+                        <small>{{ 'percent' if coupon.kind == 'percent' else 'flat' }} discount applied</small>
+                    </div>
+                    <form action="{{ url_for('remove_coupon') }}" method="POST">
+                        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+                        <button class="btn btn-sm btn-outline-danger">Remove</button>
+                    </form>
+                </div>
+                {% else %}
+                <form action="{{ url_for('apply_coupon') }}" method="POST" class="d-flex gap-2">
+                    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+                    <input type="text" name="code" class="form-control" placeholder="Enter code"
+                           value="{{ request.args.get('code', '') }}" required>
+                    <button class="btn btn-primary fw-bold">Apply</button>
+                </form>
+                <small class="text-muted d-block mt-2">Try <code>WELCOME10</code> or <code>SAVE50</code> from the seeder.</small>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card shadow-sm border-0 rounded-4">
+            <div class="card-header bg-transparent py-3"><h5 class="mb-0 fw-bold">Order summary</h5></div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between mb-2"><span>Subtotal</span><span>₹{{ subtotal }}</span></div>
+                {% if coupon %}
+                <div class="d-flex justify-content-between mb-2 text-success">
+                    <span>Discount ({{ coupon.code }})</span><span>− ₹{{ discount }}</span></div>
+                {% endif %}
+                <div class="d-flex justify-content-between mb-2"><span>Delivery</span><span class="text-success">Free</span></div>
+                <hr>
+                <div class="d-flex justify-content-between mb-3">
+                    <h5 class="fw-bold mb-0">Total</h5>
+                    <h4 class="text-primary fw-bold mb-0">₹{{ total }}</h4>
+                </div>
+                {% if cart_items %}
+                <a href="{{ url_for('checkout') }}" class="btn btn-success btn-lg w-100 fw-bold">
+                    <i class="bi bi-credit-card"></i> Proceed to checkout</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

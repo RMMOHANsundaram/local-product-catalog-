@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+{% block title %}Manage Users{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+        <h2 class="fw-bold mb-0"><i class="bi bi-people"></i> Manage Users</h2>
+        <p class="text-muted mb-0">
+            {{ role_stats.get('user', 0) }} users ·
+            {{ role_stats.get('customer', 0) }} customers ·
+            {{ role_stats.get('seller', 0) }} sellers ·
+            {{ role_stats.get('admin', 0) }} admins
+        </p>
+    </div>
+    <div class="d-flex gap-2 align-items-center">
+        <form class="d-flex" method="GET" action="{{ url_for('admin_users') }}">
+            <input type="text" name="search" class="form-control form-control-sm me-2"
+                   placeholder="username, name, email" value="{{ search }}">
+            <button class="btn btn-sm btn-outline-primary">Search</button>
+        </form>
+        <a href="{{ url_for('admin_sellers') }}" class="btn btn-sm btn-outline-success">
+            <i class="bi bi-shop"></i> Sellers</a>
+    </div>
+</div>
+
+<ul class="nav nav-pills mb-3">
+    <li class="nav-item me-2">
+        <a class="nav-link {% if not role_filter %}active{% else %}bg-light text-dark{% endif %}"
+           href="{{ url_for('admin_users') }}">All</a></li>
+    {% for role in ['user', 'customer', 'seller', 'admin'] %}
+    <li class="nav-item me-2">
+        <a class="nav-link {% if role_filter == role %}active{% else %}bg-light text-dark{% endif %}"
+           href="{{ url_for('admin_users', role=role) }}">{{ ROLE_LABELS[role] }}</a></li>
+    {% endfor %}
+</ul>
+
+<div class="card shadow-sm border-0 rounded-4">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-dark">
+                    <tr><th>User</th><th>Contact</th><th>Orders</th><th>Role</th>
+                        <th>Joined</th><th>Actions</th></tr>
+                </thead>
+                <tbody>
+                    {% for u in users %}
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                {% if u.avatar_url %}
+                                <img src="{{ u.avatar_url }}" width="36" height="36"
+                                     class="rounded-circle object-fit-cover me-2" alt="avatar">
+                                {% else %}
+                                <i class="bi bi-person-circle fs-4 me-2 text-secondary"></i>
+                                {% endif %}
+                                <div>
+                                    <div class="fw-bold">{{ u.username }}
+                                        {% if u._id|string == session.get('user_id') %}
+                                        <span class="badge bg-info text-dark">you</span>{% endif %}
+                                        {% if u.seller_status %}
+                                        <span class="badge bg-{{ 'success' if u.seller_status == 'approved' else ('warning text-dark' if u.seller_status == 'pending' else 'danger') }}">
+                                            {{ u.seller_status }}</span>
+                                        {% endif %}
+                                    </div>
+                                    <small class="text-muted">{{ u.full_name or '—' }}</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="small">{{ u.email or '—' }}<br>{{ u.phone or '' }}</td>
+                        <td>{{ order_counts.get(u._id|string, 0) }}</td>
+                        <td>
+                            <form method="POST" action="{{ url_for('update_user_role', user_id=u._id) }}"
+                                  class="d-flex gap-2">
+                                <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+                                <select name="role" class="form-select form-select-sm" style="width: 130px;">
+                                    {% for role in ['user', 'customer', 'seller', 'admin'] %}
+                                    <option value="{{ role }}" {% if u.role == role %}selected{% endif %}>
+                                        {{ ROLE_LABELS[role] }}</option>
+                                    {% endfor %}
+                                </select>
+                                <button class="btn btn-sm btn-warning">Save</button>
+                            </form>
+                        </td>
+                        <td class="small text-muted">
+                            {{ u.created_at.strftime('%Y-%m-%d') if u.created_at else '—' }}</td>
+                        <td>
+                            <form method="POST" action="{{ url_for('delete_user', user_id=u._id) }}"
+                                  onsubmit="return confirm('Delete this user permanently?');">
+                                <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+                                <button class="btn btn-sm btn-danger"
+                                        {% if u._id|string == session.get('user_id') %}disabled{% endif %}>
+                                    Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="6" class="text-center py-5 text-muted">No users found.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

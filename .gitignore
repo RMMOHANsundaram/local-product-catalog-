@@ -1,0 +1,9 @@
+venv/
+.venv/
+__pycache__/
+*.pyc
+.env
+
+# Uploaded product photos / avatars
+static/uploads/*
+!static/uploads/.gitkeep

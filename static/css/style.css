@@ -1,0 +1,172 @@
+/* Import Modern Google Font */
+body { 
+    font-family: 'Outfit', sans-serif; 
+    background-color: #f8f9fc;
+    color: #2c3e50;
+    padding-top: 90px; /* To prevent overlap with fixed navbar */
+}
+
+/* Glassmorphism Navbar */
+.navbar-glass {
+    background: rgba(255, 255, 255, 0.75) !important;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid rgba(255,255,255,0.4);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+}
+
+.navbar-glass .navbar-brand {
+    color: #4f46e5 !important; /* Indigo accent */
+    font-size: 1.4rem;
+}
+
+.navbar-glass .nav-link {
+    color: #4b5563 !important;
+    font-weight: 600;
+    transition: color 0.3s ease;
+}
+
+.navbar-glass .nav-link:hover {
+    color: #ec4899 !important; /* Pink hover effect */
+}
+
+/* Product Cards with Micro-animations */
+.product-card { 
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    background: #ffffff;
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.03);
+}
+
+.product-card:hover { 
+    transform: translateY(-10px) scale(1.02); 
+    box-shadow: 0 20px 40px rgba(79, 70, 229, 0.15) !important; 
+    border-color: rgba(79, 70, 229, 0.2);
+}
+
+.product-card img {
+    transition: transform 0.6s ease;
+}
+
+.product-card:hover img {
+    transform: scale(1.1);
+}
+
+/* Buttons with Gradients */
+.btn-primary {
+    background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+    border: none;
+    border-radius: 12px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 20px rgba(79, 70, 229, 0.4);
+    background: linear-gradient(135deg, #4338ca 0%, #4f46e5 100%);
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+    border: none;
+    border-radius: 12px;
+}
+
+.btn-success:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 20px rgba(16, 185, 129, 0.4);
+}
+
+/* Gradient Hero Text (Index Page) */
+.display-4.text-primary {
+    background: linear-gradient(135deg, #4f46e5 0%, #ec4899 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 700;
+}
+
+/* Soft Badges */
+.badge {
+    padding: 0.5em 0.9em;
+    border-radius: 8px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+/* General Layout Tweaks */
+.card {
+    border-radius: 20px;
+    border: none;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.04);
+}
+
+.jumbotron {
+    background: linear-gradient(135deg, rgba(79, 70, 229, 0.08) 0%, rgba(236, 72, 153, 0.08) 100%) !important;
+    border: 1px solid rgba(255,255,255,0.7);
+    backdrop-filter: blur(10px);
+    border-radius: 24px !important;
+}
+
+/* Smooth Table Hover for Admin Dashboard */
+.table-hover tbody tr {
+    transition: all 0.2s ease;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(79, 70, 229, 0.05);
+    transform: scale(1.01);
+}
+
+/* --------------------------------------------------------------------------
+   Order tracking timeline
+   -------------------------------------------------------------------------- */
+.timeline { position: relative; padding-left: 28px; }
+.timeline::before {
+    content: ""; position: absolute; left: 7px; top: 6px; bottom: 6px;
+    width: 2px; background: var(--bs-border-color);
+}
+.timeline-item { position: relative; padding-bottom: 18px; }
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-dot {
+    position: absolute; left: -28px; top: 4px; width: 16px; height: 16px;
+    border-radius: 50%; border: 3px solid var(--bs-body-bg);
+}
+
+/* --------------------------------------------------------------------------
+   Footer
+   -------------------------------------------------------------------------- */
+.site-footer {
+    background: var(--bs-tertiary-bg);
+    border-top: 1px solid var(--bs-border-color);
+}
+
+/* --------------------------------------------------------------------------
+   Dark mode adjustments (Bootstrap 5.3 data-bs-theme)
+   -------------------------------------------------------------------------- */
+[data-bs-theme="dark"] body { background-color: #0f1117; color: #e6e8ee; }
+[data-bs-theme="dark"] .navbar-glass {
+    background: rgba(21, 24, 33, 0.85) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+[data-bs-theme="dark"] .product-card {
+    background: #161a23;
+    border-color: rgba(255, 255, 255, 0.08);
+}
+[data-bs-theme="dark"] .card { background-color: #161a23; color: #e6e8ee; }
+[data-bs-theme="dark"] .text-dark { color: #e6e8ee !important; }
+[data-bs-theme="dark"] .table-light { --bs-table-bg: #1b1f29; color: #e6e8ee; }
+[data-bs-theme="dark"] .bg-light { background-color: #1b1f29 !important; }
+
+/* --------------------------------------------------------------------------
+   Small polish
+   -------------------------------------------------------------------------- */
+.hover-lift { transition: transform .25s ease; }
+.hover-lift:hover { transform: translateY(-3px); }
+@media print {
+    .no-print, nav, footer { display: none !important; }
+    body { padding-top: 0 !important; }
+}

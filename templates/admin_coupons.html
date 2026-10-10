@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+{% block title %}Coupons{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-0"><i class="bi bi-ticket-perforated"></i> Coupons</h2>
+        <p class="text-muted mb-0">Discount codes customers can apply at checkout.</p>
+    </div>
+    <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary">Back to dashboard</a>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-4">
+        <div class="card shadow-sm border-0 rounded-4">
+            <div class="card-header bg-transparent py-3"><h5 class="mb-0 fw-bold">New coupon</h5></div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('add_coupon') }}">
+                    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Code *</label>
+                        <input type="text" name="code" class="form-control text-uppercase" required
+                               placeholder="e.g. FESTIVE20" pattern="[A-Za-z0-9_\-]{3,20}">
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label fw-bold">Type *</label>
+                            <select name="kind" class="form-select">
+                                <option value="percent">Percent %</option>
+                                <option value="flat">Flat ₹</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-bold">Value *</label>
+                            <input type="number" step="0.01" min="0" name="value" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label fw-bold">Min order ₹</label>
+                            <input type="number" step="1" min="0" name="min_order" class="form-control" value="0">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-bold">Max uses</label>
+                            <input type="number" step="1" min="0" name="max_uses" class="form-control" value="0">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Expires on</label>
+                        <input type="date" name="expires_at" class="form-control">
+                        <small class="text-muted">Leave blank for no expiry. Max uses 0 = unlimited.</small>
+                    </div>
+                    <button class="btn btn-primary w-100 fw-bold">Create coupon</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <div class="card shadow-sm border-0 rounded-4">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-dark">
+                            <tr><th>Code</th><th>Discount</th><th>Min order</th><th>Used</th>
+                                <th>Expires</th><th>Status</th><th>Actions</th></tr>
+                        </thead>
+                        <tbody>
+                            {% for coupon in coupons %}
+                            <tr>
+                                <td class="fw-bold">{{ coupon.code }}</td>
+                                <td>
+                                    {% if coupon.kind == 'percent' %}{{ money(coupon.value) }}%
+                                    {% else %}₹{{ money(coupon.value) }} off{% endif %}
+                                </td>
+                                <td>₹{{ money(coupon.min_order or 0) }}</td>
+                                <td>{{ coupon.used_count or 0 }}{% if coupon.max_uses %} / {{ coupon.max_uses }}{% endif %}</td>
+                                <td class="small">{{ coupon.expires_at.strftime('%d %b %Y') if coupon.expires_at else 'Never' }}</td>
+                                <td>
+                                    {% if coupon.active %}<span class="badge bg-success">Active</span>
+                                    {% else %}<span class="badge bg-secondary">Disabled</span>{% endif %}
+                                </td>
+                                <td>
+                                    <div class="d-flex gap-1">
+                                        <form action="{{ url_for('toggle_coupon', coupon_id=coupon._id) }}" method="POST">
+                                            <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+                                            <button class="btn btn-sm btn-warning">{{ 'Disable' if coupon.active else 'Enable' }}</button>
+                                        </form>
+                                        <form action="{{ url_for('delete_coupon', coupon_id=coupon._id) }}" method="POST"
+                                              onsubmit="return confirm('Delete this coupon?');">
+                                            <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+                                            <button class="btn btn-sm btn-danger">Delete</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="7" class="text-center py-5 text-muted">
+                                No coupons yet — create your first one.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

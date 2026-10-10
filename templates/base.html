@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Local Product Catalog{% endblock %}</title>
+    <script>
+        // Apply the saved theme before paint to avoid a flash.
+        (function () {
+            try {
+                var t = localStorage.getItem('catalog-theme') || 'light';
+                document.documentElement.setAttribute('data-bs-theme', t);
+            } catch (e) {}
+        })();
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-glass fixed-top">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="{{ url_for('index') }}">🛍️ Local Product Catalog</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto align-items-lg-center">
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('index') }}">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('products') }}">Products</a></li>
+
+                    {% if 'user_id' in session %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('wishlist') }}" title="Wishlist">
+                            <i class="bi bi-heart"></i> Wishlist
+                            {% if wishlist_count %}
+                            <span class="badge bg-danger rounded-pill">{{ wishlist_count }}</span>
+                            {% endif %}
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('view_cart') }}">
+                            <i class="bi bi-cart"></i> Cart
+                            <span class="badge bg-warning text-dark rounded-pill">{{ cart_count }}</span>
+                        </a>
+                    </li>
+
+                    {% if session.get('role') == 'seller' %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle text-success fw-bold" href="#" role="button"
+                           data-bs-toggle="dropdown"><i class="bi bi-shop"></i> Seller Area</a>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+                            <li><a class="dropdown-item" href="{{ url_for('seller_dashboard') }}"><i class="bi bi-speedometer2"></i> Dashboard</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('seller_products') }}"><i class="bi bi-box-seam"></i> My Products</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('seller_add_product') }}"><i class="bi bi-plus-circle"></i> Add Product</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('seller_orders') }}"><i class="bi bi-receipt"></i> My Orders</a></li>
+                            {% if not seller_approved %}
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-warning" href="{{ url_for('seller_status') }}"><i class="bi bi-hourglass-split"></i> Approval pending</a></li>
+                            {% endif %}
+                        </ul>
+                    </li>
+                    {% endif %}
+
+                    {% if session.get('role') == 'admin' %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle text-primary fw-bold" href="#" role="button"
+                           data-bs-toggle="dropdown"><i class="bi bi-shield-lock"></i> Admin Area
+                            {% if admin_alerts %}<span class="badge bg-danger rounded-pill">{{ admin_alerts }}</span>{% endif %}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+                            <li><a class="dropdown-item" href="{{ url_for('admin_dashboard') }}"><i class="bi bi-graph-up"></i> Dashboard & Analytics</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('admin_products') }}"><i class="bi bi-box-seam"></i> Manage Products</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('add_product') }}"><i class="bi bi-plus-circle"></i> Add Product</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('admin_orders') }}"><i class="bi bi-receipt"></i> Manage Orders</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('admin_sellers') }}"><i class="bi bi-shop"></i> Sellers
+                                {% if admin_alerts %}<span class="badge bg-danger">{{ admin_alerts }}</span>{% endif %}</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('admin_users') }}"><i class="bi bi-people"></i> Users</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('admin_coupons') }}"><i class="bi bi-ticket-perforated"></i> Coupons</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('admin_reviews') }}"><i class="bi bi-star"></i> Reviews</a></li>
+                        </ul>
+                    </li>
+                    {% endif %}
+
+                    <li class="nav-item">
+                        <button class="btn btn-sm btn-light border ms-2" id="themeToggle" type="button"
+                                title="Toggle dark mode"><i class="bi bi-moon-stars"></i></button>
+                    </li>
+
+                    {% if 'user_id' in session %}
+                    <li class="nav-item dropdown ms-2">
+                        <a class="nav-link dropdown-toggle bg-white text-primary rounded px-3 fw-bold" href="#"
+                           role="button" data-bs-toggle="dropdown">
+                            {% if current_user and current_user.avatar_url %}
+                            <img src="{{ current_user.avatar_url }}" width="22" height="22"
+                                 class="rounded-circle object-fit-cover me-1" alt="avatar">
+                            {% else %}
+                            <i class="bi bi-person-circle"></i>
+                            {% endif %}
+                            {{ session.get('username') }}
+                            <span class="badge bg-secondary ms-1">{{ ROLE_LABELS.get(session.get('role'), '') }}</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+                            <li><a class="dropdown-item" href="{{ url_for('account') }}"><i class="bi bi-person-gear"></i> My Account</a></li>
+                            {% if session.get('role') in ['customer', 'seller', 'admin'] %}
+                            <li><a class="dropdown-item" href="{{ url_for('customer_dashboard') }}"><i class="bi bi-speedometer2"></i> My Dashboard</a></li>
+                            {% endif %}
+                            <li><a class="dropdown-item" href="{{ url_for('my_orders') }}"><i class="bi bi-box"></i> My Orders</a></li>
+                            {% if session.get('role') == 'seller' %}
+                            <li><a class="dropdown-item" href="{{ url_for('seller_dashboard') }}"><i class="bi bi-shop"></i> Seller Area</a></li>
+                            {% endif %}
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-danger" href="{{ url_for('logout') }}"><i class="bi bi-box-arrow-right"></i> Logout</a></li>
+                        </ul>
+                    </li>
+                    {% else %}
+                    <li class="nav-item dropdown ms-2">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">Login</a>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+                            <li><a class="dropdown-item" href="{{ url_for('login') }}"><i class="bi bi-person"></i> User / Customer Login</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('admin_login') }}"><i class="bi bi-shield-lock"></i> Admin Login</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item"><a class="btn btn-primary ms-2 px-4 shadow-sm"
+                        style="border-radius: 50px;" href="{{ url_for('register') }}">Register</a></li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container min-vh-100">
+        {% if session.get('role') == 'seller' and not seller_approved %}
+        <div class="alert alert-warning d-flex align-items-center gap-2 mt-3">
+            <i class="bi bi-hourglass-split"></i>
+            <div>Your shop is awaiting administrator approval — you can browse and shop,
+                but product management is locked until then.
+                <a href="{{ url_for('seller_status') }}" class="fw-bold">View status</a></div>
+        </div>
+        {% endif %}
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm mt-3">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </div>
+
+    <footer class="site-footer text-center py-4 mt-5">
+        <div class="container">
+            <p class="mb-1 fw-bold">🛍️ Local Product Catalog</p>
+            <p class="mb-0 small">Supporting local shops — built for a college project with
+                Flask &amp; MongoDB.</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

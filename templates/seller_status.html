@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block title %}Seller status{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow-sm border-0 rounded-4 mt-4">
+            <div class="card-body p-5 text-center">
+                {% if status == 'approved' %}
+                <i class="bi bi-patch-check-fill display-1 text-success"></i>
+                <h2 class="fw-bold mt-3">Your shop is approved!</h2>
+                <p class="text-secondary">You can now publish products and manage your inventory.</p>
+                <a href="{{ url_for('seller_dashboard') }}" class="btn btn-success btn-lg px-4 fw-bold">
+                    <i class="bi bi-shop"></i> Open seller dashboard</a>
+                {% elif status == 'rejected' %}
+                <i class="bi bi-x-octagon-fill display-1 text-danger"></i>
+                <h2 class="fw-bold mt-3">Application not approved</h2>
+                <p class="text-secondary">An administrator rejected this shop application. Please contact
+                    support if you believe this is a mistake.</p>
+                <a href="{{ url_for('account') }}" class="btn btn-outline-primary px-4">Update shop details</a>
+                {% else %}
+                <i class="bi bi-hourglass-split display-1 text-warning"></i>
+                <h2 class="fw-bold mt-3">Waiting for approval</h2>
+                <p class="text-secondary">Your shop <strong>{{ user.shop_name or '' }}</strong> is in the
+                    review queue. An administrator will approve it shortly — you can keep shopping
+                    in the meantime.</p>
+                <div class="alert alert-info text-start">
+                    <strong>While you wait you can:</strong>
+                    <ul class="mb-0 mt-2">
+                        <li>Complete your <a href="{{ url_for('account') }}">shop profile</a>.</li>
+                        <li>Browse the <a href="{{ url_for('products') }}">catalogue</a> for pricing ideas.</li>
+                    </ul>
+                </div>
+                {% endif %}
+
+                <div class="row text-center mt-4 pt-3 border-top">
+                    <div class="col-4">
+                        <div class="fw-bold">@{{ user.username }}</div>
+                        <small class="text-muted">Username</small>
+                    </div>
+                    <div class="col-4">
+                        <div class="fw-bold">
+                            <span class="badge bg-{{ 'success' if status == 'approved' else ('warning text-dark' if status == 'pending' else 'danger') }}">
+                                {{ status }}</span>
+                        </div>
+                        <small class="text-muted">Status</small>
+                    </div>
+                    <div class="col-4">
+                        <div class="fw-bold">{{ user.shop_name or '—' }}</div>
+                        <small class="text-muted">Shop</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+{% block title %}Manage Sellers{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-0"><i class="bi bi-shop"></i> Manage Sellers</h2>
+        <p class="text-muted mb-0">Approve or reject shop applications.</p>
+    </div>
+    <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary">Back to dashboard</a>
+</div>
+
+<ul class="nav nav-pills mb-4">
+    {% for tab in ['pending', 'approved', 'rejected', 'all'] %}
+    <li class="nav-item me-2">
+        <a class="nav-link {% if status_filter == tab %}active{% else %}bg-light text-dark{% endif %}"
+           href="{{ url_for('admin_sellers', status=tab) }}">
+            {{ tab|capitalize }}
+            {% if tab in counts %}<span class="badge bg-dark ms-1">{{ counts[tab] }}</span>{% endif %}
+        </a>
+    </li>
+    {% endfor %}
+</ul>
+
+<div class="row g-4">
+    {% for seller in sellers %}
+    <div class="col-md-6 col-xl-4">
+        <div class="card shadow-sm border-0 rounded-4 h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div>
+                        <h5 class="fw-bold mb-0">{{ seller.shop_name or seller.username }}</h5>
+                        <small class="text-muted">@{{ seller.username }}</small>
+                    </div>
+                    <span class="badge bg-{{ 'success' if seller.seller_status == 'approved' else ('warning text-dark' if seller.seller_status == 'pending' else 'danger') }}">
+                        {{ seller.seller_status or 'pending' }}</span>
+                </div>
+                <p class="small text-secondary mb-2">
+                    <i class="bi bi-person"></i> {{ seller.full_name or '—' }}<br>
+                    <i class="bi bi-envelope"></i> {{ seller.email or 'no email' }}<br>
+                    <i class="bi bi-telephone"></i> {{ seller.phone or seller.phone or 'no phone' }}<br>
+                    <i class="bi bi-box-seam"></i> {{ seller.product_count }} product(s)
+                </p>
+                {% if seller.shop_about %}
+                <p class="small fst-italic text-muted">"{{ seller.shop_about }}"</p>
+                {% endif %}
+                <small class="text-muted d-block mb-3">
+                    Applied {{ seller.created_at.strftime('%d %b %Y') if seller.created_at else '—' }}</small>
+
+                <div class="d-flex gap-2">
+                    {% if seller.seller_status != 'approved' %}
+                    <form action="{{ url_for('moderate_seller', user_id=seller._id, action='approve') }}" method="POST">
+                        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+                        <button class="btn btn-success btn-sm fw-bold"><i class="bi bi-check2"></i> Approve</button>
+                    </form>
+                    {% endif %}
+                    {% if seller.seller_status != 'rejected' %}
+                    <form action="{{ url_for('moderate_seller', user_id=seller._id, action='reject') }}" method="POST"
+                          onsubmit="return confirm('Reject this seller?');">
+                        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+                        <button class="btn btn-outline-danger btn-sm fw-bold"><i class="bi bi-x"></i> Reject</button>
+                    </form>
+                    {% endif %}
+                    <a href="{{ url_for('admin_users', search=seller.username) }}"
+                       class="btn btn-outline-secondary btn-sm">Account</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-12 text-center py-5">
+        <div class="display-1 text-muted mb-3"><i class="bi bi-shop-window"></i></div>
+        <h4 class="text-muted">No {{ status_filter if status_filter != 'all' else '' }} sellers</h4>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

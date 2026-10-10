@@ -1,0 +1,120 @@
+{% extends 'base.html' %}
+{% block title %}Order {{ order._id }}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-4">
+    <div>
+        <h2 class="fw-bold mb-0">Order details</h2>
+        <p class="text-muted mb-0">Order ID: <span class="fw-bold">{{ order._id }}</span></p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('order_invoice', order_id=order._id) }}" class="btn btn-outline-primary">
+            <i class="bi bi-printer"></i> Invoice</a>
+        <a href="{{ url_for('admin_orders') if is_admin else url_for('my_orders') }}" class="btn btn-secondary">
+            Back to orders</a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="card shadow-sm border-0 rounded-4 mb-4">
+            <div class="card-header bg-transparent py-3 d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 fw-bold">Items</h5>
+                <span class="badge bg-{{ STATUS_COLORS.get(order.status, 'secondary') }} fs-6">{{ order.status }}</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead class="table-light">
+                            <tr><th>Product</th><th>Shop</th><th>Qty</th><th>Price</th><th>Subtotal</th></tr>
+                        </thead>
+                        <tbody>
+                            {% for item in order['items'] %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        {% if item.image_url %}
+                                        <img src="{{ item.image_url }}" width="44" height="44"
+                                             class="rounded object-fit-cover me-3" alt="{{ item.name }}">
+                                        {% endif %}
+                                        <a href="{{ url_for('product_details', product_id=item.product_id) }}"
+                                           class="fw-bold text-decoration-none">{{ item.name }}</a>
+                                    </div>
+                                </td>
+                                <td class="small text-muted">{{ item.shop_name or '—' }}</td>
+                                <td>{{ item.quantity }}</td>
+                                <td>₹{{ money(item.price) }}</td>
+                                <td class="fw-bold">₹{{ money(item.price * item.quantity) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr><td colspan="4" class="text-end">Subtotal</td>
+                                <td>₹{{ money(order.subtotal if order.subtotal is defined else order.total) }}</td></tr>
+                            {% if order.discount %}
+                            <tr class="text-success"><td colspan="4" class="text-end">
+                                Discount{% if order.coupon_code %} ({{ order.coupon_code }}){% endif %}</td>
+                                <td>− ₹{{ money(order.discount) }}</td></tr>
+                            {% endif %}
+                            <tr><td colspan="4" class="text-end fw-bold">Total paid</td>
+                                <td class="fw-bold text-primary">₹{{ money(order.total) }}</td></tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm border-0 rounded-4">
+            <div class="card-header bg-transparent py-3"><h5 class="mb-0 fw-bold">
+                <i class="bi bi-truck"></i> Tracking timeline</h5></div>
+            <div class="card-body">
+                <ul class="timeline list-unstyled mb-0">
+                    {% for step in history %}
+                    <li class="timeline-item">
+                        <span class="timeline-dot bg-{{ STATUS_COLORS.get(step.status, 'secondary') }}"></span>
+                        <div>
+                            <strong>{{ step.status }}</strong>
+                            <span class="text-muted small d-block">
+                                {{ step.at.strftime('%d %b %Y, %H:%M') if step.at }}
+                                {% if step.by %}· by {{ step.by }}{% endif %}
+                            </span>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card shadow-sm border-0 rounded-4 mb-4">
+            <div class="card-header bg-transparent py-3"><h5 class="mb-0 fw-bold">Delivery</h5></div>
+            <div class="card-body">
+                <p class="mb-1 fw-bold">Shipping address</p>
+                <p class="text-secondary">{{ order.shipping_address }}</p>
+                <p class="mb-1 fw-bold">Payment</p>
+                <p class="text-secondary">{{ order.payment_method or 'Cash on Delivery' }}</p>
+                <p class="mb-1 fw-bold">Placed on</p>
+                <p class="text-secondary mb-0">{{ order.date.strftime('%d %b %Y, %H:%M') }}</p>
+            </div>
+        </div>
+
+        <div class="d-grid gap-2">
+            {% if can_cancel %}
+            <form action="{{ url_for('cancel_order', order_id=order._id) }}" method="POST"
+                  onsubmit="return confirm('Cancel this order and restore stock?');">
+                <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+                <button class="btn btn-outline-danger w-100 fw-bold">
+                    <i class="bi bi-x-circle"></i> Cancel order</button>
+            </form>
+            {% endif %}
+            {% if not is_admin %}
+            <form action="{{ url_for('reorder', order_id=order._id) }}" method="POST">
+                <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+                <button class="btn btn-outline-primary w-100 fw-bold">
+                    <i class="bi bi-arrow-repeat"></i> Reorder</button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

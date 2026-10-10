@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+{% block title %}My Orders{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold mb-0"><i class="bi bi-box"></i> My Orders</h2>
+    <a href="{{ url_for('products') }}" class="btn btn-outline-primary rounded-pill px-4">Shop more</a>
+</div>
+
+{% if orders %}
+    {% for order in orders %}
+    <div class="card shadow-sm border-0 rounded-4 mb-4">
+        <div class="card-header bg-transparent d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div>
+                <span class="fw-bold">Order {{ order._id }}</span>
+                <small class="text-muted d-block">Placed {{ order.date.strftime('%d %b %Y, %H:%M') }}</small>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <span class="badge bg-{{ STATUS_COLORS.get(order.status, 'secondary') }}">{{ order.status }}</span>
+                <a href="{{ url_for('order_detail', order_id=order._id) }}" class="btn btn-sm btn-primary">Track / details</a>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-8">
+                    <ul class="list-group list-group-flush">
+                        {% for item in order['items'] %}
+                        <li class="list-group-item d-flex justify-content-between px-0">
+                            <span>{{ item.quantity }} × {{ item.name }}
+                                <small class="text-muted d-block">{{ item.shop_name or '' }}</small></span>
+                            <span>₹{{ money(item.price * item.quantity) }}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <p class="text-muted small mb-1">Delivering to: {{ order.shipping_address }}</p>
+                    {% if order.discount %}
+                    <p class="text-success small mb-1">Saved ₹{{ money(order.discount) }}
+                        {% if order.coupon_code %}({{ order.coupon_code }}){% endif %}</p>
+                    {% endif %}
+                    <h4 class="fw-bold text-primary mb-3">Total: ₹{{ money(order.total) }}</h4>
+                    <div class="d-flex justify-content-md-end gap-2">
+                        <a href="{{ url_for('order_invoice', order_id=order._id) }}"
+                           class="btn btn-sm btn-outline-secondary"><i class="bi bi-receipt"></i> Invoice</a>
+                        <form action="{{ url_for('reorder', order_id=order._id) }}" method="POST">
+                            <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+                            <button class="btn btn-sm btn-outline-primary"><i class="bi bi-arrow-repeat"></i> Reorder</button>
+                        </form>
+                        {% if order.status in ['Placed', 'Processing'] %}
+                        <form action="{{ url_for('cancel_order', order_id=order._id) }}" method="POST"
+                              onsubmit="return confirm('Cancel this order?');">
+                            <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+                            <button class="btn btn-sm btn-outline-danger">Cancel</button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+{% else %}
+<div class="text-center py-5">
+    <div class="display-1 text-muted mb-3"><i class="bi bi-bag-x"></i></div>
+    <h4 class="text-muted">You haven't placed any orders yet.</h4>
+    <a href="{{ url_for('products') }}" class="btn btn-primary mt-3">Start shopping</a>
+</div>
+{% endif %}
+{% endblock %}

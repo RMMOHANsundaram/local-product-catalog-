@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+{% block title %}Seller Dashboard{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+        <h2 class="fw-bold mb-0"><i class="bi bi-shop"></i> {{ user.shop_name or 'My Shop' }}</h2>
+        <p class="text-muted mb-0">Seller dashboard for {{ session.get('username') }}</p>
+    </div>
+    <a href="{{ url_for('seller_add_product') }}" class="btn btn-success fw-bold">
+        <i class="bi bi-plus-lg"></i> Add product</a>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="card bg-primary text-white shadow-sm border-0 rounded-4">
+            <div class="card-body text-center">
+                <h2 class="display-5 fw-bold mb-0">{{ products|length }}</h2>
+                <h6 class="mb-0">My Products</h6>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card bg-success text-white shadow-sm border-0 rounded-4">
+            <div class="card-body text-center">
+                <h2 class="display-5 fw-bold mb-0">₹{{ revenue }}</h2>
+                <h6 class="mb-0">Sales Revenue</h6>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card bg-info text-white shadow-sm border-0 rounded-4">
+            <div class="card-body text-center">
+                <h2 class="display-5 fw-bold mb-0">{{ units }}</h2>
+                <h6 class="mb-0">Units Sold</h6>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card bg-warning text-dark shadow-sm border-0 rounded-4">
+            <div class="card-body text-center">
+                <h2 class="display-5 fw-bold mb-0">{{ order_count }}</h2>
+                <h6 class="mb-0">Orders Received</h6>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if low_stock %}
+<div class="alert alert-warning">
+    <strong><i class="bi bi-exclamation-triangle"></i> Low stock alert:</strong>
+    {% for p in low_stock %}
+    <span class="badge bg-dark me-1">{{ p.name }} ({{ p.quantity }})</span>
+    {% endfor %}
+    <a href="{{ url_for('seller_products') }}" class="fw-bold ms-2">Restock now</a>
+</div>
+{% endif %}
+
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="card shadow-sm border-0 rounded-4">
+            <div class="card-header bg-transparent py-3 d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 fw-bold">Recent products</h5>
+                <a href="{{ url_for('seller_products') }}" class="btn btn-sm btn-outline-primary">Manage all</a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr><th>Product</th><th>Price</th><th>Stock</th><th></th></tr>
+                        </thead>
+                        <tbody>
+                            {% for product in products[:6] %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <img src="{{ product.image_url }}" width="40" height="40"
+                                             class="rounded object-fit-cover me-2" alt="{{ product.name }}">
+                                        <div>
+                                            <div class="fw-bold">{{ product.name }}</div>
+                                            <small class="text-muted">{{ product.category }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>₹{{ money(product.price) }}</td>
+                                <td>
+                                    {% if product.quantity <= 0 %}
+                                    <span class="badge bg-danger">Out</span>
+                                    {% elif product.quantity <= 5 %}
+                                    <span class="badge bg-warning text-dark">{{ product.quantity }}</span>
+                                    {% else %}
+                                    <span class="badge bg-success">{{ product.quantity }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('seller_edit_product', product_id=product._id) }}"
+                                       class="btn btn-sm btn-warning">Edit</a>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="4" class="text-center py-4 text-muted">
+                                No products yet — <a href="{{ url_for('seller_add_product') }}">add your first one</a>.
+                            </td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-5">
+        <div class="card shadow-sm border-0 rounded-4 h-100">
+            <div class="card-header bg-transparent py-3"><h5 class="mb-0 fw-bold">Shop tips</h5></div>
+            <div class="card-body">
+                <ul class="list-unstyled mb-0">
+                    <li class="mb-3"><i class="bi bi-check-circle-fill text-success me-2"></i>
+                        Use real photos — listings with images sell far better.</li>
+                    <li class="mb-3"><i class="bi bi-check-circle-fill text-success me-2"></i>
+                        Keep stock accurate; sold-out items are hidden from the storefront.</li>
+                    <li class="mb-3"><i class="bi bi-check-circle-fill text-success me-2"></i>
+                        Reply to reviews by updating your product description.</li>
+                    <li><i class="bi bi-check-circle-fill text-success me-2"></i>
+                        Watch the <a href="{{ url_for('seller_orders') }}">orders page</a> to fulfil quickly.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+{% block title %}Invoice {{ order._id }}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 no-print">
+    <h2 class="fw-bold mb-0"><i class="bi bi-receipt"></i> Invoice</h2>
+    <div class="d-flex gap-2">
+        <button onclick="window.print()" class="btn btn-primary"><i class="bi bi-printer"></i> Print / Save PDF</button>
+        <a href="{{ url_for('order_detail', order_id=order._id) }}" class="btn btn-secondary">Back</a>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0 rounded-4">
+    <div class="card-body p-5">
+        <div class="d-flex justify-content-between align-items-start mb-5">
+            <div>
+                <h3 class="fw-bold mb-1">🛍️ Local Product Catalog</h3>
+                <p class="text-muted mb-0">Local marketplace · Coimbatore</p>
+                <p class="text-muted mb-0">{{ url_for('index', _external=True) }}</p>
+            </div>
+            <div class="text-end">
+                <h4 class="fw-bold mb-1">INVOICE</h4>
+                <p class="mb-0"><strong>#</strong> {{ order._id }}</p>
+                <p class="mb-0">{{ order.date.strftime('%d %b %Y') }}</p>
+                <span class="badge bg-{{ STATUS_COLORS.get(order.status, 'secondary') }}">{{ order.status }}</span>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <h6 class="text-uppercase text-muted small fw-bold">Billed to</h6>
+                <p class="mb-1 fw-bold">{{ order.username }}</p>
+                <p class="text-secondary mb-0">{{ order.shipping_address }}</p>
+            </div>
+            <div class="col-md-6 text-md-end">
+                <h6 class="text-uppercase text-muted small fw-bold">Payment</h6>
+                <p class="mb-0">{{ order.payment_method or 'Cash on Delivery' }}</p>
+                {% if order.coupon_code %}
+                <p class="mb-0">Coupon: <strong>{{ order.coupon_code }}</strong></p>
+                {% endif %}
+            </div>
+        </div>
+
+        <table class="table">
+            <thead class="table-light">
+                <tr><th>#</th><th>Item</th><th>Shop</th><th class="text-end">Qty</th>
+                    <th class="text-end">Unit price</th><th class="text-end">Amount</th></tr>
+            </thead>
+            <tbody>
+                {% for item in order['items'] %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td class="fw-bold">{{ item.name }}</td>
+                    <td class="text-muted">{{ item.shop_name or '—' }}</td>
+                    <td class="text-end">{{ item.quantity }}</td>
+                    <td class="text-end">₹{{ money(item.price) }}</td>
+                    <td class="text-end">₹{{ money(item.price * item.quantity) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="row justify-content-end">
+            <div class="col-md-5">
+                <div class="d-flex justify-content-between py-1">
+                    <span>Subtotal</span>
+                    <span>₹{{ money(order.subtotal if order.subtotal is defined else order.total) }}</span>
+                </div>
+                {% if order.discount %}
+                <div class="d-flex justify-content-between py-1 text-success">
+                    <span>Discount</span><span>− ₹{{ money(order.discount) }}</span>
+                </div>
+                {% endif %}
+                <div class="d-flex justify-content-between py-1">
+                    <span>Delivery</span><span class="text-success">Free</span>
+                </div>
+                <hr>
+                <div class="d-flex justify-content-between">
+                    <h5 class="fw-bold mb-0">Total</h5>
+                    <h4 class="fw-bold mb-0">₹{{ money(order.total) }}</h4>
+                </div>
+            </div>
+        </div>
+
+        <p class="text-muted small mt-5 mb-0">Thank you for supporting local sellers. This is a
+            computer-generated invoice and does not require a signature.</p>
+    </div>
+</div>
+{% endblock %}

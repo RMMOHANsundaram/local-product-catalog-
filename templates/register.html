@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+{% block title %}Register{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-7 col-lg-6">
+        <div class="card shadow-sm border-0 mt-5 rounded-4">
+            <div class="card-body p-4 p-lg-5">
+                <h2 class="text-center fw-bold mb-1">Create an account</h2>
+                <p class="text-center text-muted small mb-4">Shop locally — or open your own shop.</p>
+
+                <form action="{{ url_for('register') }}" method="POST">
+                    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Account type</label>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <input type="radio" class="btn-check" name="role" id="roleCustomer" value="customer"
+                                       {% if form.role == 'customer' %}checked{% endif %} data-role-pick>
+                                <label class="btn btn-outline-primary w-100" for="roleCustomer">
+                                    <i class="bi bi-bag-heart d-block"></i> Customer</label>
+                            </div>
+                            <div class="col-6">
+                                <input type="radio" class="btn-check" name="role" id="roleSeller" value="seller"
+                                       {% if form.role == 'seller' %}checked{% endif %} data-role-pick>
+                                <label class="btn btn-outline-success w-100" for="roleSeller">
+                                    <i class="bi bi-shop d-block"></i> Seller</label>
+                            </div>
+                        </div>
+                        <small class="text-muted">Customers get a personal dashboard. Sellers can publish
+                            products after an admin approves the shop.</small>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Username *</label>
+                            <input type="text" name="username" class="form-control" value="{{ form.username }}"
+                                   pattern="[A-Za-z0-9_.]{3,20}"
+                                   title="3-20 characters: letters, numbers, dot or underscore" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Full name</label>
+                            <input type="text" name="full_name" class="form-control"
+                                   value="{{ form.full_name }}" placeholder="e.g. Mohan Raj">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Email</label>
+                        <input type="email" name="email" class="form-control" value="{{ form.email }}"
+                               placeholder="you@example.com">
+                    </div>
+
+                    <div class="mb-3 d-none" id="shopNameBlock">
+                        <label class="form-label fw-bold">Shop name *</label>
+                        <input type="text" name="shop_name" class="form-control" value="{{ form.shop_name }}"
+                               placeholder="e.g. Mohan Fresh Mart">
+                        <small class="text-muted">Shown on every product you publish.</small>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-4">
+                            <label class="form-label fw-bold">Password *</label>
+                            <input type="password" name="password" class="form-control" minlength="6" required>
+                        </div>
+                        <div class="col-md-6 mb-4">
+                            <label class="form-label fw-bold">Confirm password *</label>
+                            <input type="password" name="confirm_password" class="form-control" minlength="6" required>
+                        </div>
+                    </div>
+
+                    <small class="text-muted d-block mb-3">
+                        Passwords are stored as salted hashes (never in plain text). Administrator accounts
+                        are created by seeding or promoted by an existing admin.
+                    </small>
+
+                    <button type="submit" class="btn btn-success w-100 fw-bold">
+                        <i class="bi bi-person-plus"></i> Register</button>
+                </form>
+
+                <p class="text-center mt-3 text-muted mb-0">
+                    Already have an account? <a href="{{ url_for('login') }}" class="fw-bold">Login</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Reveal the shop-name field only for seller sign-ups.
+    (function () {
+        var block = document.getElementById('shopNameBlock');
+        var input = block.querySelector('input');
+        function sync() {
+            var picked = document.querySelector('[data-role-pick]:checked');
+            var isSeller = picked && picked.value === 'seller';
+            block.classList.toggle('d-none', !isSeller);
+            input.required = isSeller;
+        }
+        document.querySelectorAll('[data-role-pick]').forEach(function (el) {
+            el.addEventListener('change', sync);
+        });
+        sync();
+    })();
+</script>
+{% endblock %}

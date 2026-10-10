@@ -1,0 +1,147 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="hero-section text-center text-white py-5 px-4 mb-5 rounded-4 shadow-lg position-relative overflow-hidden"
+     style="background: linear-gradient(135deg, #4f46e5 0%, #ec4899 100%);">
+    <div class="position-absolute rounded-circle" style="background: rgba(255,255,255,0.1); width: 300px; height: 300px; top: -100px; left: -50px;"></div>
+    <div class="position-absolute rounded-circle" style="background: rgba(255,255,255,0.1); width: 200px; height: 200px; bottom: -50px; right: -50px;"></div>
+
+    <div class="position-relative py-4">
+        <h1 class="display-3 fw-bold mb-3" style="text-shadow: 0 4px 10px rgba(0,0,0,0.2);">Shop Local. Shop Better.</h1>
+        <p class="lead mb-4 fw-light fs-4" style="opacity: 0.9;">Discover handmade crafts, fresh groceries and the best deals from shops near you.</p>
+
+        <form action="{{ url_for('products') }}" method="GET" class="d-flex justify-content-center mx-auto mt-4" style="max-width: 650px;">
+            <input class="form-control form-control-lg border-0 shadow-lg me-2 px-4" style="border-radius: 50px; height: 60px;"
+                   type="search" name="search" placeholder="Search products, shops, categories...">
+            <button class="btn btn-dark btn-lg shadow-lg px-5 fw-bold" style="border-radius: 50px; height: 60px;" type="submit">Search</button>
+        </form>
+
+        {% if not session.get('user_id') %}
+        <div class="mt-4">
+            <a href="{{ url_for('register') }}" class="btn btn-light fw-bold rounded-pill px-4">
+                <i class="bi bi-shop"></i> Sell your products with us
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row g-4 text-center mb-5">
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm rounded-4 h-100">
+            <div class="card-body">
+                <h2 class="fw-bold text-primary mb-0">{{ stats.products }}</h2>
+                <small class="text-muted text-uppercase fw-bold">Products</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm rounded-4 h-100">
+            <div class="card-body">
+                <h2 class="fw-bold text-primary mb-0">{{ stats.shops }}</h2>
+                <small class="text-muted text-uppercase fw-bold">Local Shops</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm rounded-4 h-100">
+            <div class="card-body">
+                <h2 class="fw-bold text-primary mb-0">{{ stats.sellers }}</h2>
+                <small class="text-muted text-uppercase fw-bold">Approved Sellers</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm rounded-4 h-100">
+            <div class="card-body">
+                <h2 class="fw-bold text-primary mb-0">{{ stats.orders }}</h2>
+                <small class="text-muted text-uppercase fw-bold">Orders Placed</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="h2 fw-bold mb-0"><i class="bi bi-fire text-danger"></i> Trending Now</h2>
+    <a href="{{ url_for('products') }}" class="btn btn-outline-primary rounded-pill px-4 fw-bold">Browse All Products</a>
+</div>
+
+<div class="row g-4 mb-5">
+    {% for product in trending %}
+    <div class="col-md-3">
+        <div class="card h-100 product-card">
+            <div class="position-relative">
+                <a href="{{ url_for('product_details', product_id=product._id) }}">
+                    <img src="{{ product.image_url }}" class="card-img-top object-fit-cover" height="220" alt="{{ product.name }}">
+                </a>
+                <span class="badge bg-white text-primary position-absolute top-0 end-0 m-3 shadow-sm border">{{ product.category }}</span>
+            </div>
+            <div class="card-body p-4">
+                <h5 class="card-title text-truncate fw-bold mb-1">{{ product.name }}</h5>
+                <p class="card-text small text-muted mb-3"><i class="bi bi-shop text-primary"></i> {{ product.shop_name or 'Local seller' }}</p>
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="text-primary fw-bold mb-0">₹{{ money(product.price) }}</h5>
+                    <small class="text-muted"><i class="bi bi-eye"></i> {{ product.views or 0 }}</small>
+                </div>
+            </div>
+            <div class="card-footer bg-transparent border-0 p-4 pt-0">
+                <div class="d-flex gap-2">
+                    <form action="{{ url_for('add_to_cart', product_id=product._id) }}" method="POST" class="flex-grow-1">
+                        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+                        <input type="hidden" name="quantity" value="1">
+                        <button type="submit" class="btn btn-primary w-100 fw-bold rounded-3">
+                            <i class="bi bi-cart-plus"></i> Add
+                        </button>
+                    </form>
+                    <a href="{{ url_for('product_details', product_id=product._id) }}"
+                       class="btn btn-light border rounded-3 text-secondary" title="View details"><i class="bi bi-eye"></i></a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-12 text-center py-5">
+        <h4 class="text-muted">No products yet</h4>
+        <p class="text-secondary">Run <code>python seed.py</code> to load the demo catalogue.</p>
+    </div>
+    {% endfor %}
+</div>
+
+{% if recently_viewed %}
+<h3 class="h4 fw-bold mb-4"><i class="bi bi-clock-history"></i> Recently Viewed</h3>
+<div class="row g-4 mb-5">
+    {% for product in recently_viewed %}
+    <div class="col-6 col-md-3">
+        <a href="{{ url_for('product_details', product_id=product._id) }}" class="text-decoration-none">
+            <div class="card h-100 product-card">
+                <img src="{{ product.image_url }}" class="card-img-top object-fit-cover" height="150" alt="{{ product.name }}">
+                <div class="card-body py-3">
+                    <div class="fw-bold text-truncate">{{ product.name }}</div>
+                    <div class="text-primary fw-bold">₹{{ money(product.price) }}</div>
+                </div>
+            </div>
+        </a>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<h3 class="h4 fw-bold mb-4"><i class="bi bi-stars"></i> New Arrivals</h3>
+<div class="row g-4 mb-4">
+    {% for product in recent %}
+    <div class="col-md-3">
+        <div class="card h-100 product-card">
+            <img src="{{ product.image_url }}" class="card-img-top object-fit-cover" height="180" alt="{{ product.name }}">
+            <div class="card-body">
+                <div class="small text-primary fw-bold text-uppercase">{{ product.category }}</div>
+                <h6 class="fw-bold text-truncate">{{ product.name }}</h6>
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="fw-bold text-dark">₹{{ money(product.price) }}</span>
+                    <a href="{{ url_for('product_details', product_id=product._id) }}"
+                       class="btn btn-sm btn-outline-primary">View</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
